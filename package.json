@@ -1,0 +1,31 @@
+{
+  "name": "webview-bun-lib",
+  "module": "src/index.ts",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "build": "bun ./scripts/bun.build.release.ts",
+    "build.watch": "bun ./scripts/bun.build.watch.ts",
+    "demo.node": "node ./build/demo.js",
+    "demo.deno": "deno -A --unstable-ffi ./build/demo.js",
+    "demo.bun": "bun ./build/demo.js"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/deno": "^2.0.0",
+    "@types/node": "^22.10.1"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "version": "1.0.0",
+  "description": "To install dependencies:",
+  "directories": {
+    "doc": "docs"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "koffi": "^2.9.2"
+  }
+}
