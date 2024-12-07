@@ -3,6 +3,7 @@ import { installOsDependencies } from "./install.deps.js";
 
 console.log({ runTime: detectRuntime() });
 
+/*
 await installOsDependencies().catch((err) => {
       throw err;
 });
@@ -15,7 +16,7 @@ try {
 } catch (err) {
       throw err;
 }
-
+*/
 function detectRuntime() {
       if (typeof Deno !== "undefined") {
             return "Deno";
