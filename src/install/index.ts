@@ -1,7 +1,9 @@
 import { execSync } from "node:child_process";
 import { installOsDependencies } from "./install.deps.js";
+import { exit } from "node:process";
 
 console.log({ runTime: detectRuntime() });
+exit(0);
 
 /*
 await installOsDependencies().catch((err) => {
@@ -24,13 +26,19 @@ function detectRuntime() {
       if (typeof Bun !== "undefined") {
             return "Bun";
       }
-      if (typeof process !== "undefined" && process.versions && process.versions.node) {
+      if (
+            typeof Bun === "undefined" &&
+            typeof process !== "undefined" &&
+            process.versions &&
+            process.versions.node
+      ) {
             return "Node";
       }
 }
+/*
 function getCompileCommand() {
       const runtime = detectRuntime();
-      console.log({ runtime });
+      //console.log({ runtime });
       if (!runtime) throw Error("Unknown javascript runtime");
 
       if (runtime === "Node")
@@ -40,3 +48,4 @@ function getCompileCommand() {
 
       throw "Never";
 }
+      */
