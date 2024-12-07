@@ -1,6 +1,8 @@
 import { execSync } from "node:child_process";
 import { installOsDependencies } from "./install.deps.js";
 
+console.log({ runTime: detectRuntime() });
+
 await installOsDependencies().catch((err) => {
       throw err;
 });
