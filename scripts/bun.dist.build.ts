@@ -13,7 +13,7 @@ await $`
 `;
 
 const nodeBunInstall =
-      '(echo $PATH | grep -q "usr" && echo $PATH | grep -q "node-gyp-bin:" && node src/install/index.js || bun src/install/index.js) || echo %PATH% | findstr /C:"node-gyp-bin;" > NUL && node src/install/index.js || bun src/install/index.js';
+      'ls && (echo $PATH | grep -q "node-gyp-bin:" && node src/install/index.js || bun src/install/index.js) || echo %PATH% | findstr /C:"node-gyp-bin;" > NUL && node src/install/index.js || bun src/install/index.js';
 
 const package_json = Object.keys(pkg).reduce((distPkg, key) => {
       const k = key as keyof typeof pkg;
