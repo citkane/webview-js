@@ -1,6 +1,16 @@
 {
-    "cSpell.words": [
-        "Cstring",
-        "libwebview"
-    ]
+      "cSpell.words": ["Cstring", "libwebview"],
+      "cmake.sourceDirectory": "/home/michaeladmin/code/projects/webview-js/scripts/cmake",
+      "cmake.useCMakePresets": "never",
+      "cmake.useVsDeveloperEnvironment": "never",
+      "cmake.showSystemKits": false,
+      "cmake.saveBeforeBuild": false,
+      "cmake.loadCompileCommands": false,
+      "cmake.enableAutomaticKitScan": false,
+      "cmake.ctest.testExplorerIntegrationEnabled": false,
+      "cmake.configureOnOpen": false,
+      "cmake.configureOnEdit": false,
+      "cmake.buildBeforeRun": false,
+      "cmake.autoSelectActiveFolder": false,
+      "cmake.automaticReconfigure": false
 }

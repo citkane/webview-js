@@ -1,5 +1,3 @@
-import koffi, { type IKoffiCType, type IKoffiLib, type KoffiFunction } from "koffi";
-
 /*
 export const DispatchCallback = koffi.pointer(
       koffi.proto("DispatchCallback", "void *", ["string"])
