@@ -1,0 +1,5 @@
+{
+	"tasks": {
+		"install": "deno --allow-read --allow-env --allow-run ./src/install/index.js"
+	}
+}
