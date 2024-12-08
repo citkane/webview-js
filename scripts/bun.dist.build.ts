@@ -7,14 +7,13 @@ await $`
     bun build --target=node --sourcemap=external ./src/install --outdir ./dist/src
     cp -R ./cmake ./dist
     # cp -R ./docs ./dist
+    cp ./isBun.ts ./dist
     cp ./deno.json ./dist
     cp ./LICENSE ./dist
     cp ./README.md ./dist
 `;
 
-const nodeBunInstall =
-      '(grep "install" package.json > /dev/null && echo $PATH | grep -q "node-gyp-bin:" && node src/install/index.js || bun src/install/index.js) || (findstr "install" package.json > NUL && echo %PATH% | findstr /C:"node-gyp-bin;" > NUL && node src/install/index.js || bun src/install/index.js)';
-
+const nodeBunInstall = "bun run isBun.ts && bun src/install/index.js || node src/install/index.js"
 const package_json = Object.keys(pkg).reduce((distPkg, key) => {
       const k = key as keyof typeof pkg;
       switch (key) {
