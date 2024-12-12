@@ -1,1 +1,1 @@
-import "./install.linux";
+import "./install.linux.test.ts";

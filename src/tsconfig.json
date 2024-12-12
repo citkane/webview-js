@@ -1,0 +1,12 @@
+{
+      "extends": "../tsconfig.json",
+      "exclude": ["../node_modules"],
+      "include": ["class/class.Webview.ts"],
+      "compilerOptions": {
+            "noEmit": false,
+            "declaration": true,
+            "emitDeclarationOnly": true,
+            "outDir": "../dist/src",
+            "maxNodeModuleJsDepth": 0
+      }
+}

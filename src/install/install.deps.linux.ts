@@ -47,10 +47,10 @@ export class Linux {
                   "cmake",
                   "build-essential",
                   "ninja-build",
-                  "libgtk-3-0",
-                  "libgtk-3-dev",
-                  "libwebkit2gtk-4.1-0",
-                  "libwebkit2gtk-4.1-dev",
+                  "libgtk-4-1",
+                  "libgtk-4-dev",
+                  "libwebkitgtk-6.0-4",
+                  "libwebkitgtk-6.0-dev",
             ];
             this.pkgFilterCommand = "apt list --installed";
 

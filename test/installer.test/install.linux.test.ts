@@ -14,7 +14,15 @@ function apt() {
       return () => {
             linux.apt();
             expect(linux.pkgFilterCommand).toBe("apt list --installed");
-            expect(linux.dependencies).toEqual(["cmake"]);
+            expect(linux.dependencies).toEqual([
+                  "cmake",
+                  "build-essential",
+                  "ninja-build",
+                  "libgtk-3-0",
+                  "libgtk-3-dev",
+                  "libwebkit2gtk-4.1-0",
+                  "libwebkit2gtk-4.1-dev",
+            ]);
       };
 }
 function isPkgInstalled(platform: "apt") {

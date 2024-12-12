@@ -1,5 +1,5 @@
 {
-      "cSpell.words": ["Cstring", "libwebview"],
+      "cSpell.words": ["Cstring", "libwebkit", "libwebkitgtk", "libwebview"],
       "cmake.sourceDirectory": "/home/michaeladmin/code/projects/webview-js/scripts/cmake",
       "cmake.useCMakePresets": "never",
       "cmake.useVsDeveloperEnvironment": "never",

@@ -1,16 +1,17 @@
 {
       "name": "webview-js",
+      "version": "0.0.0",
       "module": "src/index.js",
       "type": "module",
       "exports": "./src/index.js",
       "scripts": {
-            "install": "%PATH% && (echo %PATH% | findstr /C:\"node-gyp-bin:\" >nul && node src/install/index.js || bun src/install/index.js) || echo $PATH | grep -q \"node-gyp-bin:\" && node src/install/index.js || bun src/install/index.js",
+            "test": "bun test ./test/index.test.ts",
             "build.dist": "bun ./scripts/bun.dist.build.ts",
-            "build.release.watch": "bun ./scripts/bun.build.watch.ts",
-            "lib.webview": "bash ./scripts/lib.webview.sh",
-            "demo.node": "node ./build/demo.js",
-            "demo.deno": "deno -A --unstable-ffi ./build/demo.js",
-            "demo.bun": "bun ./build/demo.js"
+            "build.dist.watch": "bun ./scripts/bun.dist.build.watch.ts",
+            "webview.lib": "bash ./scripts/webview.lib.sh",
+            "webview.run.bun": "bun test run",
+            "webview.run.deno": "deno  --unstable-sloppy-imports --allow-ffi ./test/run.test/run.ts",
+            "webview.run.node": "node test/run.test/run.js"
       },
       "devDependencies": {
             "@types/bun": "latest",
@@ -20,7 +21,7 @@
       "peerDependencies": {
             "typescript": "^5.0.0"
       },
-      "version": "1.0.0",
+      
       "description": "To install dependencies:",
       "directories": {
             "doc": "docs"

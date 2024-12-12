@@ -6,22 +6,19 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "../../../bin")
 
 project(libWebview)
 
-# add_definitions(-DNAPI_VERSION=4)
 include_directories(${CMAKE_JS_INC})
 
 include(FetchContent)
-
 FetchContent_Declare(
     webview
     GIT_REPOSITORY https://github.com/webview/webview
     GIT_TAG 0.12.0)
 FetchContent_MakeAvailable(webview)
 
-file(GLOB SOURCE_FILES node.webviewWrapper.cc)
 
-add_library(${PROJECT_NAME} SHARED ${SOURCE_FILES} ${CMAKE_JS_SRC})
+add_library(${PROJECT_NAME} SHARED node.swigWrapper.cc)
 set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "" SUFFIX ".node")
-target_link_libraries(${PROJECT_NAME} ${CMAKE_JS_LIB} webview::core)
+target_link_libraries(${PROJECT_NAME} webview::core)
 
 if(MSVC AND CMAKE_JS_NODELIB_DEF AND CMAKE_JS_NODELIB_TARGET)
   # Generate node.lib
