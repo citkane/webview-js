@@ -1,9 +1,7 @@
 import type bunFFI from "bun:ffi";
+import type { Webview } from "./constructors/class.Webview";
 
-export type Pointer = bunFFI.Pointer | Deno.PointerValue;
-export type FunctionPointer = bunFFI.Pointer | Deno.PointerObject;
-export type { bunFFI };
-export { handle_kind, size_hint };
+export { handle_kind, size_hint, type bunFFI };
 
 declare global {
       type libWebview = {
@@ -11,7 +9,7 @@ declare global {
                   handle: Pointer,
                   name: Uint8Array | string,
                   fn: FunctionPointer,
-                  userArg?: Pointer
+                  userArg?: Uint8Array | string
             ) => void;
             webview_create: (debug: 0 | 1, handle?: Pointer) => number;
             webview_destroy: (handle: Pointer) => void;
@@ -42,6 +40,30 @@ declare global {
             webview_set_title: (handle: Pointer, title: Uint8Array | string) => void;
             webview_terminate: (handle: Pointer) => void;
             webview_unbind: (handle: Pointer, name: Uint8Array | string) => void;
+      };
+      type runtimes = "bun" | "deno" | "node";
+      type Pointer = bunFFI.Pointer | Deno.PointerValue;
+      type FunctionPointer = bunFFI.Pointer | Deno.PointerObject | Function;
+      type FFICallbackReturns = bunFFI.JSCallback | Deno.UnsafeCallback<any> | Function;
+      type self = InstanceType<typeof Webview>;
+      type dispatchUsrCbFnc = (...args: any[]) => void;
+      type bindUsrCbFnc = (...args: any[]) => any;
+      type dispatchCallback = (
+            id: Pointer,
+            userCb: dispatchUsrCbFnc,
+            userArg?: any
+      ) => void;
+      type bindCallback = (
+            id: Pointer,
+            argsStringPointer: Pointer | string,
+            userCbFnc: bindUsrCbFnc,
+            userArgPointer?: Pointer | string
+      ) => void;
+      type factoryDispatch = {
+            [key in runtimes]: (dispatch: dispatchCallback) => FFICallbackReturns;
+      };
+      type factoryBind = {
+            [key in runtimes]: (bind: bindCallback) => FFICallbackReturns;
       };
 }
 enum handle_kind {

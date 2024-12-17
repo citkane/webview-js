@@ -1,19 +1,31 @@
-import { _bind, _dispatch, toCString } from "../util";
+import {
+      _bind,
+      _dispatch,
+      alreadyCreatedWarning,
+      notCreatedWarning,
+      toCString,
+} from "../util";
 import { FFI } from "./class.FFI";
-import { size_hint, type Pointer } from "../types";
+import { size_hint } from "../types";
 
 export class Webview extends FFI {
       handle!: Pointer;
-      constructor(debug = false, refHandle?: number) {
+      constructor(private debug = false) {
             super();
-            this.handle = this.lib.webview_create(
-                  debug ? 1 : 0,
-                  refHandle ? (refHandle as Pointer) : null
-            ) as Pointer;
       }
+      create = (handle?: number) => {
+            if (alreadyCreatedWarning(this.handle)) return this.handle;
+            this.handle = this.lib.webview_create(
+                  this.debug ? 1 : 0,
+                  handle ? (handle as Pointer) : null
+            ) as Pointer;
+            return this.handle;
+      };
+
       /** Runs the main loop until it's terminated. */
-      run = () => {
-            this.lib.webview_run(this.handle);
+      run = (handle = this.handle) => {
+            if (!handle) throw Error("Must call `create` before `run`");
+            this.lib.webview_run(handle);
             this.lib.webview_destroy(this.handle);
             this.handle = null;
       };
@@ -22,8 +34,10 @@ export class Webview extends FFI {
        * Updates the title of the native window.
        * @param title
        */
-      set_title = (title: string) =>
-            this.lib.webview_set_title(this.handle, toCString(title));
+      set_title = (title: string, handle = this.handle) => {
+            notCreatedWarning(handle, "set_title");
+            this.lib.webview_set_title(handle, toCString(title));
+      };
 
       /**
        * Navigates webview to the given URL. URL may be a properly encoded data URI.
@@ -34,7 +48,10 @@ export class Webview extends FFI {
        * ```
        * @param url
        */
-      navigate = (url: string) => this.lib.webview_navigate(this.handle, toCString(url));
+      navigate = (url: string, handle = this.handle) => {
+            notCreatedWarning(handle, "navigate");
+            this.lib.webview_navigate(handle, toCString(url));
+      };
 
       /**
        * Load HTML content into the webview.
@@ -43,8 +60,10 @@ export class Webview extends FFI {
        * ```
        * @param html
        */
-      set_html = (html: string) =>
-            this.lib.webview_set_html(this.handle, toCString(html));
+      set_html = (html: string, handle = this.handle) => {
+            notCreatedWarning(handle, "set_html");
+            this.lib.webview_set_html(handle, toCString(html));
+      };
 
       /**
        * Updates the size of the native window.
@@ -59,14 +78,21 @@ export class Webview extends FFI {
       set_size = (
             width: number,
             height: number,
-            hints: size_hint = size_hint.HINT_NONE
-      ) => this.lib.webview_set_size(this.handle, width, height, hints);
+            hints: size_hint = size_hint.HINT_NONE,
+            handle = this.handle
+      ) => {
+            notCreatedWarning(handle, "set_size");
+            this.lib.webview_set_size(handle, width, height, hints);
+      };
 
       /**
        * Injects JavaScript code to be executed immediately upon loading a page. The code will be executed before window.onload.
        * @param js
        */
-      init = (js: string) => this.lib.webview_init(this.handle, toCString(js));
+      init = (js: string, handle = this.handle) => {
+            notCreatedWarning(handle, "init");
+            this.lib.webview_init(handle, toCString(js));
+      };
 
       /**
        * Evaluates arbitrary JavaScript code.
@@ -74,7 +100,10 @@ export class Webview extends FFI {
        * Use bindings if you need to communicate the result of the evaluation.
        * @param js
        */
-      eval = (js: string) => this.lib.webview_eval(this.handle, toCString(js));
+      eval = (js: string, handle = this.handle) => {
+            notCreatedWarning(handle, "eval");
+            this.lib.webview_eval(handle, toCString(js));
+      };
 
       /**
        * Binds a function pointer to a new global JavaScript function.
@@ -87,8 +116,15 @@ export class Webview extends FFI {
        * @param fn
        * @param userArg
        */
-      bind = (name: string, fn: (...args: any[]) => void, userArg?: any) =>
-            _bind.bind(this)(name, fn, userArg);
+      bind = (
+            name: string,
+            fn: (...args: any[]) => void,
+            userArg?: any,
+            handle = this.handle
+      ) => {
+            notCreatedWarning(handle, "bind");
+            _bind.bind(this)(handle, name, fn, userArg);
+      };
 
       /**
        * Schedules a function to be invoked on the thread with the run/event loop.
@@ -96,18 +132,22 @@ export class Webview extends FFI {
        * @param fn
        * @param userArg
        */
-      dispatch = (fn: (...args: any[]) => void, userArg?: any) =>
-            _dispatch.bind(this)(fn, userArg);
+      dispatch = (handle: Pointer, fn: (...args: any[]) => void, userArg?: any) => {
+            _dispatch.bind(this)(handle, fn, userArg);
+      };
 
       /**
        * Removes a binding created with {@link bind bind()}.
        * @param name
        */
-      unbind = (name: string) => this.lib.webview_unbind(this.handle, toCString(name));
+      unbind = (name: string, handle = this.handle) => {
+            notCreatedWarning(handle, "unbind");
+            this.lib.webview_unbind(handle, toCString(name));
+      };
 
       /**
        * Stops the main loop. It is safe to call this function from another other background thread.
        * @param handle The handle (pointer) of the webview instance to terminate
        */
-      terminate = (handle = this.handle) => this.lib.webview_terminate(handle);
+      terminate = (handle: Pointer) => this.lib.webview_terminate(handle);
 }

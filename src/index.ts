@@ -1,2 +1,2 @@
 import "./types";
-export { Webview } from "./class/class.Webview";
+export { Webview } from "./constructors/class.Webview";

@@ -1,9 +1,10 @@
 export type ffiTypes<T = number | string> = Record<keyof typeof denoFFIType, T>;
 
 import { detectRuntime } from ".";
-import type { bunFFI, Pointer } from "../types";
+import type { bunFFI } from "../types";
 
 const encoder = new TextEncoder();
+const runtime = detectRuntime();
 
 export const denoFFIType = {
       i32: "i32",
@@ -42,35 +43,43 @@ export function covertBunToDenoFFI(def: Record<"args" | "returns", any>) {
       }, {} as Record<"parameters" | "result", any>);
 }
 
-export function getSuffixDeno(os: string) {
-      let suffix = "";
-      switch (os) {
-            case "windows":
-                  suffix = "dll";
-                  break;
-            case "darwin":
-                  suffix = "dylib";
-                  break;
-            default:
-                  suffix = "so";
-                  break;
-      }
-      return suffix;
+// Deno does not have an inbuilt `suffix` function
+export function suffixDeno(os: string) {
+      if (os === "windows") return "dll";
+      if (os === "darwin") return "dylib";
+      return "so";
 }
 
-export function toCString(text: string, runtime = detectRuntime()) {
+export function toCString<T = Uint8Array | string>(
+      text: string,
+      runtime = detectRuntime()
+): T {
+      if (runtime === "bun" || runtime === "deno") {
+            return encoder.encode(`${text}\0`) as T;
+      }
+      return text as T;
+}
+export function fromCStringPointer(
+      pointer?: Pointer | string,
+      runtime = detectRuntime()
+) {
+      if (!pointer) return null;
       if (runtime === "bun") {
-            return encoder.encode(`${text}\0`);
+            const { CString } = require("bun:ffi") as typeof bunFFI;
+            return new CString(pointer as bunFFI.Pointer).toString();
       }
       if (runtime === "deno") {
-            return encoder.encode(`${text}\0`);
+            const unsafePointerView = new Deno.UnsafePointerView(
+                  pointer as Deno.PointerObject
+            );
+            return unsafePointerView.getCString();
       }
-      return text;
+      //It is "node", which is swig wrapped
+      return pointer as string;
 }
-export function fromCStringPointer(pointer: Pointer, runtime = detectRuntime()) {
-      switch (runtime) {
-            case "bun":
-                  const { CString } = require("bun:ffi") as typeof bunFFI;
-                  return new CString(pointer as bunFFI.Pointer).toString();
-      }
+
+export function getPointerFromJSCallback(JSCb: FFICallbackReturns) {
+      if (runtime == "bun") return (JSCb as bunFFI.JSCallback).ptr!;
+      if (runtime === "deno") return (JSCb as Deno.UnsafeCallback).pointer!;
+      return JSCb as Function;
 }

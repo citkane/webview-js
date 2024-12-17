@@ -1,12 +1,15 @@
 import { $ } from "bun";
+import { detectRuntime } from "../src/util/utils.runtime";
 
 export const rootFilesToCopy = ["deno.json", "LICENSE", "README.md"];
-export const rootDirsToCopy = ["cmake"];
+export const rootDirsToCopy = ["make"];
 export const distDir = "dist";
 export const srcDir = "src";
 
+const runtime = detectRuntime();
 const pkgInstallString =
       "bun run src/isBun.js && bun src/install/index.js || node src/install/index.js";
+//const buildScript = "node-gyp rebuild";
 
 await build();
 
@@ -55,7 +58,10 @@ export async function makeDistPackageJson() {
             const k = key as keyof typeof pkg;
             switch (key) {
                   case "scripts":
-                        distPkg.scripts = { install: pkgInstallString };
+                        distPkg.scripts = {
+                              postinstall: pkgInstallString,
+                              //build: buildScript,
+                        };
                         break;
                   case "devDependencies":
                         break;

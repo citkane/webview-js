@@ -1,21 +1,19 @@
-export type data = { task: keyof typeof tasks; value?: number | string };
+export type data = { pointer: Pointer };
 
 import { Webview } from "../../dist/src";
 
 declare const self: Worker;
-const webview = new Webview();
+const webview = new Webview(true);
+const handle = getHandle();
+webview.set_html("Worker Webview");
 
-postMessage({ value: webview.handle } as data);
-self.onmessage = (event: { data: data }) => {
-      const { task, value } = event.data;
-      tasks[task](value);
-};
+postMessage({ pointer: handle } as data);
 
-const tasks = {
-      set_title(title?: number | string) {
-            webview.set_title(title);
-      },
-      terminate(handle?: number | string) {
-            webview.terminate(Number(handle!));
-      },
-};
+webview.run();
+process.exit();
+
+function getHandle() {
+      return typeof Bun !== "undefined"
+            ? webview.create()
+            : Deno.UnsafePointer.value(webview.create() as Deno.PointerValue);
+}

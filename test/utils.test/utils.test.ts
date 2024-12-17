@@ -1,7 +1,7 @@
 import { expect, test, describe } from "bun:test";
-import { detectRuntime, ffiTypes } from "../../src/util";
+import { detectRuntime, ffiTypes, notCreatedWarning } from "../../src/util";
 
-describe("Unit test utility functions", () => {
+describe("unit test utility functions", () => {
       test("detect the runtime", function () {
             let runtime = detectRuntime();
             expect(runtime).toBe("bun");
@@ -33,5 +33,10 @@ describe("Unit test utility functions", () => {
       test("get Node runtime ffi type", () => {
             process.env.jsRuntime = "node";
             expect(ffiTypes("node")).toBeEmptyObject;
+      });
+});
+describe("unit test log functions", () => {
+      test("notCreatedWarning", () => {
+            notCreatedWarning(null, "fncName");
       });
 });

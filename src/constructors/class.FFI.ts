@@ -1,8 +1,13 @@
 type FFIBun = typeof FFIBun;
-type FFIDeno = Record<keyof FFIBun, ReturnType<typeof covertBunToDenoFFI>>;
+type FFIDeno = Record<keyof FFIBun, ReturnType<typeof convertBunToDenoFFI>>;
 
 import { join, dirname } from "node:path";
-import { covertBunToDenoFFI, detectRuntime, ffiTypes, getSuffixDeno } from "../util";
+import {
+      covertBunToDenoFFI as convertBunToDenoFFI,
+      detectRuntime,
+      ffiTypes,
+      suffixDeno,
+} from "../util";
 
 const runtime = detectRuntime();
 const ffi = ffiTypes();
@@ -35,7 +40,7 @@ export class FFI {
             return symbols as libWebview;
       };
       ffiDeno = (libPath: string) => {
-            const suffix = getSuffixDeno(Deno.build.os);
+            const suffix = suffixDeno(Deno.build.os);
             const path = join(`${libPath}.${suffix}`);
 
             const { symbols } = Deno.dlopen(path, FFIDeno);
@@ -111,10 +116,11 @@ const FFIBun = {
 };
 
 // FFIDeno is the same as FFIBun, but uses keys `{parameters, result}` in lieu of `{args, returns}`
+// This anonymous function re-maps the keys
 const FFIDeno = (() => {
       return Object.keys(FFIBun).reduce((_FFI, key) => {
             const k = key as keyof typeof FFIBun;
-            _FFI[k] = covertBunToDenoFFI(FFIBun[k]);
+            _FFI[k] = convertBunToDenoFFI(FFIBun[k]);
             return _FFI;
       }, {} as FFIDeno);
 })();

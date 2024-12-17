@@ -47,6 +47,7 @@ export class Linux {
                   "cmake",
                   "build-essential",
                   "ninja-build",
+                  "python3",
                   "libgtk-4-1",
                   "libgtk-4-dev",
                   "libwebkitgtk-6.0-4",
