@@ -2,11 +2,11 @@
 
 cd "$(dirname "$0")"/.. || exit
 
-## make the c++ swig wrapper for webview (javascript node)
-outfile=make/node/node.swigWrapper.cc
+## make the c++ swig wrapper for webview (javascript napi)
+outfile=make/node/src/napi.webview.cc
 if [ ! -f $outfile ]; then
     swig -copyright
-    swig -c++ -javascript -node -o $outfile -l webview/webview.i
+    swig -c++ -javascript -napi -o $outfile -l webview/webview.i
     printf "\nMade: %s$outfile\n"
 fi
 

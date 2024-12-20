@@ -1,11 +1,14 @@
 {
       "extends": "../tsconfig.json",
       "exclude": ["../node_modules"],
+      "include": ["index.ts", "types.ts"],
 
       "compilerOptions": {
             "noEmit": false,
             "declaration": true,
             "emitDeclarationOnly": true,
             "outDir": "../dist/src"
+            //"verbatimModuleSyntax": false,
+            //"outFile": "../dist/src/combined.d.ts"
       }
 }

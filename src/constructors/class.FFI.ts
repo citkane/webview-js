@@ -7,7 +7,7 @@ import {
       detectRuntime,
       ffiTypes,
       suffixDeno,
-} from "../util";
+} from "../util/index.js";
 
 const runtime = detectRuntime();
 const ffi = ffiTypes();
@@ -16,7 +16,7 @@ export class FFI {
       protected lib!: libWebview;
       constructor() {
             const thisDir = dirname(import.meta.filename);
-            const binDir = join(thisDir, "../../.bin");
+            const binDir = join(thisDir, "../../../.bin");
 
             switch (runtime) {
                   case "node":

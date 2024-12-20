@@ -1,5 +1,5 @@
 import os from "node:os";
-import { Linux } from "./install.deps.linux";
+import { Linux } from "./install.deps.linux.js";
 
 const platform = os.platform();
 

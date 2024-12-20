@@ -9,14 +9,14 @@ declare global {
                   handle: Pointer,
                   name: Uint8Array | string,
                   fn: FunctionPointer,
-                  userArg?: Uint8Array | string
+                  userArg: Pointer
             ) => void;
             webview_create: (debug: 0 | 1, handle?: Pointer) => number;
             webview_destroy: (handle: Pointer) => void;
             webview_dispatch: (
                   handle: Pointer,
                   callback: FunctionPointer,
-                  userArg?: Pointer
+                  userArg: Pointer
             ) => void;
             webview_eval: (handle: Pointer, js: Uint8Array | string) => void;
             webview_get_native_handle: (handle: Pointer, kind: handle_kind) => number;
@@ -46,23 +46,18 @@ declare global {
       type FunctionPointer = bunFFI.Pointer | Deno.PointerObject | Function;
       type FFICallbackReturns = bunFFI.JSCallback | Deno.UnsafeCallback<any> | Function;
       type self = InstanceType<typeof Webview>;
-      type dispatchUsrCbFnc = (...args: any[]) => void;
-      type bindUsrCbFnc = (...args: any[]) => any;
-      type dispatchCallback = (
-            id: Pointer,
-            userCb: dispatchUsrCbFnc,
-            userArg?: any
-      ) => void;
+      type userCB<T extends any | void> = (...args: any[]) => T;
+      type dispatchCB = (id: Pointer, userCb: userCB<void>, userArg?: any) => void;
       type bindCallback = (
             id: Pointer,
             argsStringPointer: Pointer | string,
-            userCbFnc: bindUsrCbFnc,
+            userCbFnc: userCB<any>,
             userArgPointer?: Pointer | string
       ) => void;
-      type factoryDispatch = {
-            [key in runtimes]: (dispatch: dispatchCallback) => FFICallbackReturns;
+      type dispatchFactory = {
+            [key in runtimes]: (dispatch: dispatchCB) => FFICallbackReturns;
       };
-      type factoryBind = {
+      type bindFactory = {
             [key in runtimes]: (bind: bindCallback) => FFICallbackReturns;
       };
 }

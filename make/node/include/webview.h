@@ -1538,7 +1538,7 @@ WEBVIEW_API webview_error_t webview_set_title(webview_t w, const char *title);
  * @param hints Size hints.
  */
 WEBVIEW_API webview_error_t webview_set_size(webview_t w, int width, int height,
-                                             webview_hint_t hints);
+                                             int hints);
 
 /**
  * Navigates webview to the given URL. URL may be a properly encoded data URI.
@@ -2999,7 +2999,7 @@ window.__webview__.onUnbind(" +
   noresult dispatch(std::function<void()> f) { return dispatch_impl(f); }
   noresult set_title(const std::string &title) { return set_title_impl(title); }
 
-  noresult set_size(int width, int height, webview_hint_t hints) {
+  noresult set_size(int width, int height, int hints) {
     return set_size_impl(width, height, hints);
   }
 
@@ -3021,8 +3021,7 @@ protected:
   virtual noresult terminate_impl() = 0;
   virtual noresult dispatch_impl(std::function<void()> f) = 0;
   virtual noresult set_title_impl(const std::string &title) = 0;
-  virtual noresult set_size_impl(int width, int height,
-                                 webview_hint_t hints) = 0;
+  virtual noresult set_size_impl(int width, int height, int hints) = 0;
   virtual noresult set_html_impl(const std::string &html) = 0;
   virtual noresult eval_impl(const std::string &js) = 0;
 
@@ -3260,8 +3259,8 @@ private:
 class cocoa_wkwebview_engine : public engine_base {
 public:
   cocoa_wkwebview_engine(bool debug, void *window)
-      : m_debug{debug}, m_window{static_cast<id>(window)}, m_owns_window{
-                                                               !window} {
+      : m_debug{debug}, m_window{static_cast<id>(window)},
+        m_owns_window{!window} {
     auto app = get_shared_application();
     // See comments related to application lifecycle in create_app_delegate().
     if (!m_owns_window) {
@@ -3399,7 +3398,7 @@ protected:
 
     return {};
   }
-  noresult set_size_impl(int width, int height, webview_hint_t hints) override {
+  noresult set_size_impl(int width, int height, int hints) override {
     objc::autoreleasepool arp;
 
     auto style = static_cast<NSWindowStyleMask>(
@@ -4058,7 +4057,7 @@ protected:
     return {};
   }
 
-  noresult set_size_impl(int width, int height, webview_hint_t hints) override {
+  noresult set_size_impl(int width, int height, int hints) override {
     gtk_window_set_resizable(GTK_WINDOW(m_window), hints != WEBVIEW_HINT_FIXED);
     if (hints == WEBVIEW_HINT_NONE) {
       gtk_compat::window_set_size(GTK_WINDOW(m_window), width, height);
@@ -4752,7 +4751,7 @@ protected:
     return {};
   }
 
-  noresult set_size_impl(int width, int height, webview_hint_t hints) override {
+  noresult set_size_impl(int width, int height, int hints) override {
     auto style = GetWindowLong(m_window, GWL_STYLE);
     if (hints == WEBVIEW_HINT_FIXED) {
       style &= ~(WS_THICKFRAME | WS_MAXIMIZEBOX);
@@ -5188,7 +5187,7 @@ WEBVIEW_API webview_error_t webview_set_title(webview_t w, const char *title) {
 }
 
 WEBVIEW_API webview_error_t webview_set_size(webview_t w, int width, int height,
-                                             webview_hint_t hints) {
+                                             int hints) {
   using namespace webview::detail;
   return api_filter(
       [=] { return cast_to_webview(w)->set_size(width, height, hints); });

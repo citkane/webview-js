@@ -1,7 +1,7 @@
 export type ffiTypes<T = number | string> = Record<keyof typeof denoFFIType, T>;
 
-import { detectRuntime } from ".";
-import type { bunFFI } from "../types";
+import { detectRuntime } from "./utils.runtime.js";
+import type { bunFFI } from "../types.js";
 
 const encoder = new TextEncoder();
 const runtime = detectRuntime();
@@ -82,4 +82,17 @@ export function getPointerFromJSCallback(JSCb: FFICallbackReturns) {
       if (runtime == "bun") return (JSCb as bunFFI.JSCallback).ptr!;
       if (runtime === "deno") return (JSCb as Deno.UnsafeCallback).pointer!;
       return JSCb as Function;
+}
+
+export function handleAsNumber(handle: Pointer) {
+      if (typeof Deno !== "undefined") {
+            return Deno.UnsafePointer.value(handle as Deno.PointerValue);
+      }
+      return handle as number;
+}
+
+export function numberAsHandle(pointer: Pointer) {
+      if (typeof Deno !== "undefined")
+            return Deno.UnsafePointer.create(pointer as any as bigint);
+      return pointer;
 }

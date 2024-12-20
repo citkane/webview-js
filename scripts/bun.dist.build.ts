@@ -32,10 +32,11 @@ export function bunBuild() {
       echo "Building type definitions..."
       tsc -p ./src/tsconfig.json
       echo "Compiling TS to JS..."
-      bun build --target=node --sourcemap=external ${srcDir}/isBun.js --outdir ${distDir}/src
-      bun build --target=node --sourcemap=external ${srcDir} --outdir ${distDir} --splitting
-      bun build --target=node --sourcemap=external ${srcDir}/install --outdir ${distDir}/src --splitting
-      bun build --target=node test/run.test/run.ts --outdir test/run.test --splitting
+      bun build --target=node --sourcemap=inline ${srcDir}/*.ts --outdir ${distDir}/src --external '*'
+      bun build --target=node --sourcemap=inline ${srcDir}/util/**/* --outdir ${distDir}/src/util --external '*'
+      bun build --target=node --sourcemap=inline ${srcDir}/install/**/* --outdir ${distDir}/src/install --external '*'
+      bun build --target=node --sourcemap=inline ${srcDir}/constructors/**/* --outdir ${distDir}/src/constructors --external '*'
+      bun build --target=node test/run.test/*run.ts --outdir test/run.test --external '*'
       `;
 }
 export function copyDirs(sourceDirs = rootDirsToCopy, targetDir = distDir) {
