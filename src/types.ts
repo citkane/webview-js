@@ -44,8 +44,9 @@ declare global {
       type runtimes = "bun" | "deno" | "node";
       type Pointer = bunFFI.Pointer | Deno.PointerValue;
       type FunctionPointer = bunFFI.Pointer | Deno.PointerObject | Function;
-      type FFICallbackReturns = bunFFI.JSCallback | Deno.UnsafeCallback<any> | Function;
-      type self = InstanceType<typeof Webview>;
+      type JSCallback<T extends bunFFI.JSCallback | Deno.UnsafeCallback<any> | Function> =
+            T;
+
       type userCB<T extends any | void> = (...args: any[]) => T;
       type dispatchCB = (id: Pointer, userCb: userCB<void>, userArg?: any) => void;
       type bindCallback = (
@@ -55,10 +56,10 @@ declare global {
             userArgPointer?: Pointer | string
       ) => void;
       type dispatchFactory = {
-            [key in runtimes]: (dispatch: dispatchCB) => FFICallbackReturns;
+            [key in runtimes]: (dispatch: dispatchCB) => JSCallback<any>;
       };
       type bindFactory = {
-            [key in runtimes]: (bind: bindCallback) => FFICallbackReturns;
+            [key in runtimes]: (bind: bindCallback) => JSCallback<any>;
       };
 }
 enum handle_kind {

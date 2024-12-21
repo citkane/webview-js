@@ -1,9 +1,8 @@
-import { bind, dispatch, notCreatedWarning, toCString } from "../util/index.js";
-import { FFI } from "./class.FFI.js";
+import { notCreatedWarning, toCString } from "../util/index.js";
+import { WebviewCallbacks } from "./class.WebviewCallbacks.js";
 import { size_hint } from "../types.js";
 
-export class Webview extends FFI {
-      handle!: Pointer;
+export class Webview extends WebviewCallbacks {
       constructor(private debug = false) {
             super();
       }
@@ -28,10 +27,7 @@ export class Webview extends FFI {
             this.lib.webview_run(handle);
             this.destroy(handle);
       }
-      destroy(handle: Pointer) {
-            this.lib.webview_destroy(handle);
-            handle = null;
-      }
+
       /**
        * Updates the title of the native window.
        * @param title
@@ -144,59 +140,6 @@ export class Webview extends FFI {
             js = !!js ? js : (jsOrHandle as string);
 
             this.lib.webview_eval(handle, toCString(js));
-      }
-
-      /**
-       * Binds a function pointer to a new global JavaScript function.
-       *
-       * Internally, JS glue code is injected to create the JS function by the given name.
-       * The callback function is passed a request identifier, a request string and a user-provided argument.
-       * The request string is a JSON array of the arguments passed to the JS function.
-       *
-       * @param name
-       * @param userCB
-       * @param userArg
-       */
-      bind(handle: Pointer, name: string, userCB: userCB<any>, userArg?: any): void;
-      bind(name: string, userCB: userCB<any>, userArg?: any): void;
-      bind(
-            nameOrHandle: string | Pointer,
-            userCbOrName: userCB<any> | string,
-            userArgOrUserCB?: any | userCB<any>,
-            userArg?: any
-      ) {
-            const hasHandle = typeof nameOrHandle !== "string";
-            const handle = hasHandle ? nameOrHandle : this.handle;
-            notCreatedWarning(handle, "bind");
-            const name = hasHandle ? (userCbOrName as string) : (nameOrHandle as string);
-            const fn = hasHandle ? userArgOrUserCB : userCbOrName;
-            userArg = hasHandle ? userArg : userArgOrUserCB;
-
-            bind.bind(this)(handle, name, fn, userArg);
-      }
-
-      /**
-       * Schedules a function to be invoked on the thread with the run/event loop.
-       * Use this function e.g. to interact with the library or native handles.
-       * @param userCB
-       * @param userArg
-       */
-      dispatch = (handle: Pointer, userCB: userCB<void>, userArg?: any) => {
-            dispatch.bind(this)(handle, userCB, userArg);
-      };
-
-      /**
-       * Removes a binding created with {@link bind bind()}.
-       * @param name
-       */
-      unbind(handle: Pointer, name: string): void;
-      unbind(name: string): void;
-      unbind(nameOrHandle: string | Pointer, name?: string) {
-            const handle = !!name ? (nameOrHandle as Pointer) : this.handle;
-            notCreatedWarning(handle, "unbind");
-            name = !!name ? name : (nameOrHandle as string);
-
-            this.lib.webview_unbind(handle, toCString(name));
       }
 
       /**

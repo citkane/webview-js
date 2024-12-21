@@ -16,16 +16,14 @@ function webviewChild(done) {
   const worker = makeWorker("./worker.run.js", listenCallback);
   const webview = new Webview;
   function listenCallback(handle) {
-    webview.set_size(handle, 1200, 1200);
+    webview.dispatch(handle, () => {
+      console.log("dispatched!");
+    });
+    webview.bind(handle, "testBind", () => {
+      console.log("I am a bound function");
+    });
     setTimeout(() => {
-      webview.eval(handle, `evalLog("Hello from your parent")`);
-      webview.dispatch(handle, () => {
-        console.log("dispatched!");
-      });
-      webview.terminate(handle);
-      worker.terminate();
-      if (done)
-        done();
+      webview.eval(handle, `testBind()`);
     }, 2000);
   }
 }

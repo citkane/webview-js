@@ -3,7 +3,7 @@ import type { data } from "./worker.run";
 import { resolve } from "node:path";
 import { numberAsHandle, Webview } from "../../dist/src/index.js";
 import { size_hint } from "../../dist/src/types.js";
-import { detectRuntime } from "../../dist/src/util/utils.runtime.js";
+import { detectRuntime, makeWorker } from "../../dist/src/util/index.js";
 
 const initString = `
 document.addEventListener('DOMContentLoaded', function() {
@@ -25,17 +25,22 @@ export function webviewChild(done?: Function) {
       const webview = new Webview();
 
       function listenCallback(handle: Pointer) {
-            webview.set_size(handle, 1200, 1200);
+            //webview.set_size(handle, 1200, 1200);
 
+            webview.dispatch(handle, () => {
+                  console.log("dispatched!");
+            });
+            webview.bind(handle, "testBind", () => {
+                  console.log("I am a bound function");
+            });
             setTimeout(() => {
-                  webview.eval(handle, `evalLog("Hello from your parent")`);
-                  webview.dispatch(handle, () => {
-                        console.log("dispatched!");
-                  });
-                  webview.terminate(handle as Pointer);
-                  worker.terminate();
-                  if (done) done();
-            }, 2000);
+                  //webview.eval(handle, `evalLog("Hello from your parent")`);
+                  webview.eval(handle, `testBind()`);
+
+                  //webview.terminate(handle as Pointer);
+                  //worker.terminate();
+                  //if (done) done();
+            }, 1000);
       }
       //worker.on("message", (handle: object) => {});
 
@@ -71,30 +76,6 @@ export function webviewChild(done?: Function) {
       //};
 
       //done();
-}
-function makeWorker(fileRelativePath: string, listenCallback: (handle: Pointer) => void) {
-      const runtime = detectRuntime();
-      if (runtime === "node") {
-            const { Worker } = require("node:worker_threads");
-            const { join } = require("node:path");
-            const worker = new Worker(join(__dirname, fileRelativePath), {
-                  workerData: {},
-            });
-            worker.on("message", (handle: Pointer) => listenCallback(handle));
-            return worker;
-      }
-      const filePath = import.meta.resolve(fileRelativePath);
-      if (runtime === "deno") {
-            const worker = new Worker(filePath, { type: "module" });
-            worker.onmessage = (event: { data: bigint }) => {
-                  const pointerValue = Deno.UnsafePointer.create(event.data);
-                  listenCallback(pointerValue);
-            };
-            return worker;
-      }
-      const worker = new Worker(filePath);
-      worker.onmessage = (event: { data: Pointer }) => listenCallback(event.data);
-      return worker;
 }
 
 export function webviewHelloWindow() {

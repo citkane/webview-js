@@ -6,7 +6,8 @@ import type { bunFFI } from "../types.js";
 const encoder = new TextEncoder();
 const runtime = detectRuntime();
 
-export const denoFFIType = {
+// A redacted mapping of Bun ffiType keys to Deno ffiTypes
+const denoFFIType = {
       i32: "i32",
       ptr: "pointer",
       void: "void",
@@ -21,7 +22,7 @@ export const ffiTypes = (runtime = detectRuntime()) => {
             const _ffi = require("bun:ffi").FFIType;
 
             // trim the fat of the full Bun FFIType to avoid downstream doubts.
-            // ie. keep babelFish ffi `Object` keys consistent across platforms
+            // ie. keep babelFish ffi `Object` keys redacted and consistent across platforms
             return Object.keys(_ffi).reduce((ffi, key) => {
                   const k = key as keyof typeof _ffi;
                   if (key in denoFFIType) ffi[key] = _ffi[k];
@@ -30,8 +31,7 @@ export const ffiTypes = (runtime = detectRuntime()) => {
       }
 
       // ffiTypes will remain empty `Object` for Node.
-      // Node is swig wrapped and has no FFI definition in this package
-      console.warn("ffi(): Node is swig wrapped and has no ffi");
+      // The Node Webview library is swig wrapped, thus has no FFI definition in this package
       return {} as ffiTypes;
 };
 
@@ -43,7 +43,7 @@ export function covertBunToDenoFFI(def: Record<"args" | "returns", any>) {
       }, {} as Record<"parameters" | "result", any>);
 }
 
-// Deno does not have an inbuilt `suffix` function
+// Unlike Bun, Deno does not have an inbuilt `suffix` function
 export function suffixDeno(os: string) {
       if (os === "windows") return "dll";
       if (os === "darwin") return "dylib";
@@ -69,30 +69,27 @@ export function fromCStringPointer(
             return new CString(pointer as bunFFI.Pointer).toString();
       }
       if (runtime === "deno") {
-            const unsafePointerView = new Deno.UnsafePointerView(
-                  pointer as Deno.PointerObject
-            );
-            return unsafePointerView.getCString();
+            return Deno.UnsafePointerView.getCString(pointer as Deno.PointerObject);
       }
       //It is "node", which is swig wrapped
       return pointer as string;
 }
 
-export function getPointerFromJSCallback(JSCb: FFICallbackReturns) {
-      if (runtime == "bun") return (JSCb as bunFFI.JSCallback).ptr!;
-      if (runtime === "deno") return (JSCb as Deno.UnsafeCallback).pointer!;
-      return JSCb as Function;
+export function getPointerFromJSCallback(JSCallback: JSCallback<any>) {
+      if (runtime == "bun") return (JSCallback as bunFFI.JSCallback).ptr!;
+      if (runtime === "deno") return (JSCallback as Deno.UnsafeCallback).pointer!;
+      return JSCallback as Pointer;
 }
 
+// For multithread IPC, Deno pointerValues need to be coerced to/from numbers.
+// If not, the pointerValue object will be serialised and cloned, thus losing memory association.
 export function handleAsNumber(handle: Pointer) {
-      if (typeof Deno !== "undefined") {
+      if (runtime === "deno") {
             return Deno.UnsafePointer.value(handle as Deno.PointerValue);
       }
       return handle as number;
 }
-
 export function numberAsHandle(pointer: Pointer) {
-      if (typeof Deno !== "undefined")
-            return Deno.UnsafePointer.create(pointer as any as bigint);
+      if (runtime === "deno") return Deno.UnsafePointer.create(pointer as any as bigint);
       return pointer;
 }

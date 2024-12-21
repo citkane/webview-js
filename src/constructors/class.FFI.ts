@@ -66,7 +66,7 @@ const FFIBun = {
             returns: ffi.void,
       },
       webview_dispatch: {
-            args: [ffi.ptr, ffi.ptr],
+            args: [ffi.ptr, ffi.function],
             returns: ffi.void,
       },
       webview_get_window: {
@@ -102,7 +102,7 @@ const FFIBun = {
             returns: ffi.void,
       },
       webview_bind: {
-            args: [ffi.ptr, ffi.cstring, ffi.ptr, ffi.cstring],
+            args: [ffi.ptr, ffi.cstring, ffi.function, ffi.cstring],
             returns: ffi.void,
       },
       webview_unbind: {
@@ -115,7 +115,7 @@ const FFIBun = {
       },
 };
 
-// FFIDeno is the same as FFIBun, but uses keys `{parameters, result}` in lieu of `{args, returns}`
+// FFI API for Deno is similar to that for Bun, but uses keys `{parameters, result}` in lieu of `{args, returns}`
 // This anonymous function re-maps the keys
 const FFIDeno = (() => {
       return Object.keys(FFIBun).reduce((_FFI, key) => {

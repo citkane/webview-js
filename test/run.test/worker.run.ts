@@ -7,14 +7,20 @@ declare const self: Worker;
 const webview = new Webview(true);
 const handle = handleAsNumber(webview.create());
 
+webview.set_html("<html></html>");
+/*
+webview.set_html(html5("Worker Webview"));
 webview.init(`
-
 const evalLog = (message) => {
       console.log("init evalLog:", message);
 };
-
 `);
-webview.set_html(html5("Worker Webview"));
+*/
+/*
+webview.dispatch(handle as Pointer, () => {
+      console.log("dispatched!");
+});
+*/
 if (typeof postMessage === "undefined") {
       const { parentPort } = require("node:worker_threads");
       parentPort.postMessage(handle);
