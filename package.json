@@ -1,15 +1,19 @@
 {
       "name": "webview-js",
       "version": "0.0.0",
+      "author": "Michael Jonker",
+      "license": "MIT",
       "module": "src/index.js",
       "type": "module",
       "exports": "./src/index.js",
+      "bin": "./src/install/index.js",
       "scripts": {
             "build": "node-gyp configure build --directory=cmake/node/build",
             "test": "bun test ./test/index.test.ts",
             "build.dist": "bun ./scripts/bun.dist.build.ts",
             "build.dist.watch": "bun ./scripts/bun.dist.build.watch.ts",
-            "webview.lib": "bash ./scripts/webview.lib.sh",
+            "webview.make": "bash ./scripts/webview.make.sh",
+            "webview.make.clean": "bash ./scripts/webview.make.sh clean",
             "webview.run.bun": "bun test --timeout 60000 run",
             "webview.run.deno": "deno  --unstable-sloppy-imports --allow-env --allow-ffi --allow-read ./test/run.test/run.ts",
             "webview.run.node": "node test/run.test/run.js"
@@ -24,7 +28,5 @@
       },
       "directories": {
             "doc": "docs"
-      },
-      "author": "Michael Jonker",
-      "license": "MIT"
+      }
 }

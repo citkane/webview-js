@@ -81,15 +81,70 @@ export function getPointerFromJSCallback(JSCallback: JSCallback<any>) {
       return JSCallback as Pointer;
 }
 
-// For multithread IPC, Deno pointerValues need to be coerced to/from numbers.
+// For multithread IPC, Deno and Node pointerValues need to be coerced to/from numbers.
 // If not, the pointerValue object will be serialised and cloned, thus losing memory association.
-export function handleAsNumber(handle: Pointer) {
+export function handleAsInt(handle: Pointer) {
       if (runtime === "deno") {
             return Deno.UnsafePointer.value(handle as Deno.PointerValue);
       }
+      if (runtime === "node") {
+            const lib = require("../../../.bin/libwebview.node") as libSwig;
+            const value = lib.swig_value(handle);
+            return value;
+      }
       return handle as number;
 }
-export function numberAsHandle(pointer: Pointer) {
-      if (runtime === "deno") return Deno.UnsafePointer.create(pointer as any as bigint);
-      return pointer;
+export function intAsHandle(number: bigint | number) {
+      console.log({ number });
+      if (runtime === "deno") {
+            return Deno.UnsafePointer.create(number as bigint) as Pointer;
+      }
+      if (runtime === "node") {
+            const lib = require("../../../.bin/libwebview.node") as libSwig;
+            return lib.swig_create(number as number) as Pointer;
+      }
+      return number as Pointer;
 }
+
+export function universalWorker(
+      absolutePath: string,
+      listenCallback: (handle: Pointer) => void
+) {
+      const runtime = detectRuntime();
+      if (runtime === "node") {
+            const { Worker } = require("node:worker_threads");
+            const { join } = require("node:path");
+            const worker = new Worker(absolutePath);
+            worker.on("message", (number: number) => {
+                  console.log({ number });
+                  const handle = intAsHandle(number);
+                  console.log({ handle });
+                  listenCallback(handle);
+            });
+            return worker;
+      }
+      if (runtime === "deno") {
+            const worker = new Worker(absolutePath, { type: "module" });
+            worker.onmessage = (event: { data: bigint }) => {
+                  const pointerValue = Deno.UnsafePointer.create(event.data);
+                  listenCallback(pointerValue);
+            };
+            return worker;
+      }
+      const worker = new Worker(absolutePath);
+      worker.onmessage = (event: { data: Pointer }) => {
+            listenCallback(event.data);
+      };
+      return worker;
+}
+
+/*
+export function JSCallback(fnc: Function) {
+      if (runtime === "node") {
+            const lib = require("../../../.bin/libwebview.node") as libPointers;
+            console.log(lib);
+            return lib.jsCallback(fnc) as Pointer;
+      }
+      return fnc;
+}
+      */

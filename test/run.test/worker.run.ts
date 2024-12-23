@@ -1,13 +1,31 @@
 export type data = { pointer: Pointer };
 
-import { handleAsNumber, Webview } from "../../dist/src/index.js";
-import { html5 } from "../../dist/src/util/index.js";
+import { Webview } from "../../dist/src/index.js";
+import { handleAsInt } from "../../dist/src/util/index.js";
 
 declare const self: Worker;
 const webview = new Webview(true);
-const handle = handleAsNumber(webview.create());
+const _handle = webview.create();
+console.log({ _handle });
+const handle = handleAsInt(_handle);
+console.log({ handle });
 
 webview.set_html("<html></html>");
+
+/*
+const cb = JSCallback((webview: any, data: any) => {
+      console.log("dispatched!");
+});
+
+console.log({ cb });
+*/
+
+/*
+webview.dispatch(_handle, (w, userArg) => {
+      console.log("dispatched!");
+});
+*/
+
 /*
 webview.set_html(html5("Worker Webview"));
 webview.init(`
@@ -17,9 +35,7 @@ const evalLog = (message) => {
 `);
 */
 /*
-webview.dispatch(handle as Pointer, () => {
-      console.log("dispatched!");
-});
+
 */
 if (typeof postMessage === "undefined") {
       const { parentPort } = require("node:worker_threads");

@@ -1,3 +1,3 @@
 import "./types.js";
 export { Webview } from "./constructors/class.Webview.js";
-export { handleAsNumber, numberAsHandle } from "./util/index.js";
+export { handleAsInt, intAsHandle } from "./util/index.js";

@@ -13,7 +13,8 @@ const runtime = detectRuntime();
 const ffi = ffiTypes();
 
 export class FFI {
-      protected lib!: libWebview;
+      protected libWv!: libWebview;
+      //protected libPtr?: libPointers;
       constructor() {
             const thisDir = dirname(import.meta.filename);
             const binDir = join(thisDir, "../../../.bin");
@@ -21,25 +22,30 @@ export class FFI {
             switch (runtime) {
                   case "node":
                         const nodeLibPath = join(binDir, "libwebview.node");
-                        this.lib = require(nodeLibPath);
+                        const pointerLibPath = join(binDir, "libpointers.node");
+                        this.libWv = require(nodeLibPath);
+                        //this.libPtr = require(pointerLibPath);
                         break;
                   case "bun":
                         const bunLibPath = join(binDir, "libwebview");
-                        this.lib = this.ffiBun(bunLibPath);
+                        this.libWv = this.ffiBun(bunLibPath);
                         break;
                   case "deno":
                         const denoLibPath = join(binDir, "libwebview");
-                        this.lib = this.ffiDeno(denoLibPath);
+                        this.libWv = this.ffiDeno(denoLibPath);
             }
       }
-      ffiBun = (libPath: string) => {
+      //nodePointerValue = this.libPtr?.value;
+      //nodePointerCreate = this.libPtr?.create;
+
+      private ffiBun = (libPath: string) => {
             const { dlopen, suffix } = require("bun:ffi");
             const path = join(`${libPath}.${suffix}`);
 
             const { symbols } = dlopen(path, FFIBun);
             return symbols as libWebview;
       };
-      ffiDeno = (libPath: string) => {
+      private ffiDeno = (libPath: string) => {
             const suffix = suffixDeno(Deno.build.os);
             const path = join(`${libPath}.${suffix}`);
 

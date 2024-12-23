@@ -4,7 +4,7 @@ import type { Webview } from "./constructors/class.Webview";
 export { handle_kind, size_hint, type bunFFI };
 
 declare global {
-      type libWebview = {
+      interface libWebview extends libSwig {
             webview_bind: (
                   handle: Pointer,
                   name: Uint8Array | string,
@@ -40,7 +40,12 @@ declare global {
             webview_set_title: (handle: Pointer, title: Uint8Array | string) => void;
             webview_terminate: (handle: Pointer) => void;
             webview_unbind: (handle: Pointer, name: Uint8Array | string) => void;
-      };
+      }
+      interface libSwig {
+            swig_value: (pointer: Pointer) => number;
+            swig_create: (value: number) => Pointer;
+            swig_jsCallback: (callBack: (w: Pointer, userArg: any) => void) => Pointer;
+      }
       type runtimes = "bun" | "deno" | "node";
       type Pointer = bunFFI.Pointer | Deno.PointerValue;
       type FunctionPointer = bunFFI.Pointer | Deno.PointerObject | Function;

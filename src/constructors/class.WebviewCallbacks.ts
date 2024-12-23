@@ -31,7 +31,7 @@ export class WebviewCallbacks extends FFI {
        * @param userArg
        */
       dispatch = (handle: Pointer, userCB: userCB<void>, userArg?: any) => {
-            const JSCallbackFactory = dispatchFactory(userCB, userArg)[runtime];
+            const JSCallbackFactory = this.dispatchFactory(userCB, userArg)[runtime];
             const JSCallback = JSCallbackFactory(
                   (id: Pointer, userCB: userCB<void>, userArg: any | null) => {
                         userCB(userArg);
@@ -41,7 +41,7 @@ export class WebviewCallbacks extends FFI {
             const callbackPointer = getPointerFromJSCallback(JSCallback)!;
 
             try {
-                  this.lib.webview_dispatch(handle, callbackPointer, null);
+                  this.libWv.webview_dispatch(handle, callbackPointer, null);
             } catch (err) {
                   console.error(err);
             }
@@ -99,19 +99,19 @@ export class WebviewCallbacks extends FFI {
                               result = JSON.stringify(result);
                               result = toCString(result);
 
-                              this.lib.webview_return(handle, id, 0, result);
+                              this.libWv.webview_return(handle, id, 0, result);
                         } catch (err: any) {
                               err = JSON.stringify(err || "");
                               err = toCString(err);
 
-                              this.lib.webview_return(handle, id, 1, err);
+                              this.libWv.webview_return(handle, id, 1, err);
                         }
                   }
             );
 
             const callbackPointer = getPointerFromJSCallback(JSCallback)!;
             try {
-                  this.lib.webview_bind(
+                  this.libWv.webview_bind(
                         handle,
                         _name,
                         callbackPointer,
@@ -138,20 +138,67 @@ export class WebviewCallbacks extends FFI {
             name = !!name ? name : (nameOrHandle as string);
             if (unsetBindWarning(name, bindCallbacks)) return;
 
-            this.lib.webview_unbind(handle, toCString(name));
+            this.libWv.webview_unbind(handle, toCString(name));
             unsetBindJSCallback(name);
       }
 
       destroy(handle: Pointer) {
-            this.lib.webview_destroy(handle);
+            this.libWv.webview_destroy(handle);
             if (handle === this.handle) {
                   bindCallbacks.forEach((JSCallback) => JSCallback.close());
                   bindCallbacks.clear();
             }
             handle = null;
       }
+      private dispatchFactory = (userCb: userCB<void>, userArg?: any) => {
+            // Clone `userArg` from the same scope to be passed to Webview at next tick.
+            // Passing it through `webview_dispatch` is a encoding / decoding nightmare!
+            // I don't see the need for it?
+            const _userArg =
+                  typeof userArg === "undefined"
+                        ? null
+                        : typeof userArg === "object"
+                        ? structuredClone(userArg)
+                        : userArg;
+
+            return {
+                  bun: (dispatchCB: dispatchCB) => {
+                        const { JSCallback } = require("bun:ffi") as typeof bunFFI;
+                        return new JSCallback(
+                              (id: bunFFI.Pointer) => {
+                                    dispatchCB(id, userCb, _userArg);
+                              },
+                              {
+                                    args: ["ptr"],
+                                    returns: "void",
+                              }
+                        ) as bunFFI.JSCallback;
+                  },
+                  deno: (dispatchCB: dispatchCB) => {
+                        return new Deno.UnsafeCallback(
+                              {
+                                    parameters: ["pointer"],
+                                    result: "void",
+                              },
+                              (id: Deno.PointerValue) => {
+                                    dispatchCB(id, userCb, _userArg);
+                              }
+                        );
+                  },
+                  node: (dispatchCB: dispatchCB) => {
+                        const callBack = this.libWv.swig_jsCallback(
+                              (w: Pointer, userArg: any) => {
+                                    dispatchCB(w, userCb, _userArg);
+                              }
+                        );
+                        console.log({ callBack });
+                        return callBack;
+                  },
+            };
+      };
 }
 
+/*
 function dispatchFactory(userCb: userCB<void>, userArg?: any) {
       // Clone `userArg` from the same scope to be passed to Webview at next tick.
       // Passing it through `webview_dispatch` is a encoding / decoding nightmare!
@@ -188,13 +235,14 @@ function dispatchFactory(userCb: userCB<void>, userArg?: any) {
                   );
             },
             node: (dispatchCB: dispatchCB) => {
+                  
                   return (id: number, arg: never) => {
                         dispatchCB(id as Pointer, userCb, _userArg);
                   };
             },
       };
 }
-
+*/
 function bindFactory(userCb: userCB<any>) {
       return {
             bun: (bindCb: bindCallback) => {

@@ -8,7 +8,7 @@ export class Webview extends WebviewCallbacks {
       }
       create(handle?: number, debug = this.debug) {
             try {
-                  const newHandle = this.lib.webview_create(
+                  const newHandle = this.libWv.webview_create(
                         debug ? 1 : 0,
                         handle ? (handle as Pointer) : null
                   ) as Pointer;
@@ -24,7 +24,7 @@ export class Webview extends WebviewCallbacks {
       run(handle = this.handle) {
             if (!handle) throw Error("Must call `create` before `run`");
 
-            this.lib.webview_run(handle);
+            this.libWv.webview_run(handle);
             this.destroy(handle);
       }
 
@@ -39,7 +39,7 @@ export class Webview extends WebviewCallbacks {
             notCreatedWarning(handle, "set_title");
             title = !!title ? title : (titleOrHandle as string);
 
-            this.lib.webview_set_title(handle, toCString(title));
+            this.libWv.webview_set_title(handle, toCString(title));
       }
 
       /**
@@ -58,7 +58,7 @@ export class Webview extends WebviewCallbacks {
             notCreatedWarning(handle, "navigate");
             url = !!url ? url : (urlOrHandle as string);
 
-            this.lib.webview_navigate(handle, toCString(url));
+            this.libWv.webview_navigate(handle, toCString(url));
       }
 
       /**
@@ -74,7 +74,7 @@ export class Webview extends WebviewCallbacks {
             const handle = !!html ? (htmlOrHandle as Pointer) : this.handle;
             notCreatedWarning(handle, "set_html");
             html = !!html ? html : (htmlOrHandle as string);
-            this.lib.webview_set_html(handle, toCString(html));
+            this.libWv.webview_set_html(handle, toCString(html));
       }
 
       /**
@@ -104,7 +104,7 @@ export class Webview extends WebviewCallbacks {
             hints = hasHandle ? hints : (hintsOrHeight as size_hint);
             hints = typeof hints === "undefined" ? size_hint.HINT_MIN : hints;
 
-            this.lib.webview_set_size(handle, width, height, hints);
+            this.libWv.webview_set_size(handle, width, height, hints);
 
             function isHint(value?: number) {
                   return typeof value === "undefined"
@@ -123,7 +123,7 @@ export class Webview extends WebviewCallbacks {
             const handle = !!js ? (jsOrHandle as Pointer) : this.handle;
             notCreatedWarning(handle, "init");
             js = !!js ? js : (jsOrHandle as string);
-            this.lib.webview_init(handle, toCString(js));
+            this.libWv.webview_init(handle, toCString(js));
       }
 
       /**
@@ -139,12 +139,12 @@ export class Webview extends WebviewCallbacks {
             notCreatedWarning(handle, "eval");
             js = !!js ? js : (jsOrHandle as string);
 
-            this.lib.webview_eval(handle, toCString(js));
+            this.libWv.webview_eval(handle, toCString(js));
       }
 
       /**
        * Stops the main loop. It is safe to call this function from another other background thread.
        * @param handle The handle (pointer) of the webview instance to terminate
        */
-      terminate = (handle: Pointer) => this.lib.webview_terminate(handle);
+      terminate = (handle: Pointer) => this.libWv.webview_terminate(handle);
 }

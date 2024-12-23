@@ -1,9 +1,8 @@
-import type { data } from "./worker.run";
-
-import { resolve } from "node:path";
-import { numberAsHandle, Webview } from "../../dist/src/index.js";
+import { Webview } from "../../dist/src/index.js";
 import { size_hint } from "../../dist/src/types.js";
-import { detectRuntime, makeWorker } from "../../dist/src/util/index.js";
+import { universalWorker } from "../../dist/src/util/index.js";
+import { JSCallback } from "../../dist/src/util/class.node.JSCallback.js";
+import { join } from "node:path";
 
 const initString = `
 document.addEventListener('DOMContentLoaded', function() {
@@ -12,7 +11,7 @@ document.addEventListener('DOMContentLoaded', function() {
 `;
 
 //if (process.env.NODE_ENV !== "test" && typeof Bun === "undefined") {
-webviewChild();
+//webviewChild();
 //webviewHelloWindow();
 //webviewNavigate();
 //webviewEval();
@@ -20,25 +19,39 @@ webviewChild();
 //webviewDispatch();
 //webviewBind();
 //}
+
+nodeJSCallabck();
+
+function nodeJSCallabck() {
+      const lib = require("../../.bin/libwebview.node");
+      const handle = new JSCallback(lib.);
+      console.log({ handle });
+      const result = lib.swig_jsCallback(10, 10, handle);
+      console.log({ result });
+}
 export function webviewChild(done?: Function) {
-      const worker = makeWorker("./worker.run.js", listenCallback);
+      const workerPath = join(__dirname, "./worker.run.js");
+      const worker = universalWorker(workerPath, listenCallback);
       const webview = new Webview();
 
       function listenCallback(handle: Pointer) {
-            //webview.set_size(handle, 1200, 1200);
-
+            console.log({ handle });
+            webview.set_size(handle, 1200, 1200);
+            webview.set_title(handle, "Webview Child Test");
+            /*
             webview.dispatch(handle, () => {
                   console.log("dispatched!");
             });
             webview.bind(handle, "testBind", () => {
                   console.log("I am a bound function");
             });
+            */
             setTimeout(() => {
                   //webview.eval(handle, `evalLog("Hello from your parent")`);
-                  webview.eval(handle, `testBind()`);
+                  // webview.eval(handle, `testBind()`);
 
-                  //webview.terminate(handle as Pointer);
-                  //worker.terminate();
+                  webview.terminate(handle as Pointer);
+                  worker.terminate();
                   //if (done) done();
             }, 1000);
       }

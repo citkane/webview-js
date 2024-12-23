@@ -4,52 +4,36 @@ var __require = /* @__PURE__ */ createRequire(import.meta.url);
 // test/run.test/run.ts
 import { Webview } from "../../dist/src/index.js";
 import { size_hint } from "../../dist/src/types.js";
-import { detectRuntime } from "../../dist/src/util/utils.runtime.js";
+import { universalWorker } from "../../dist/src/util/index.js";
+import { JSCallback } from "../../dist/src/util/class.node.JSCallback.js";
+import { join } from "node:path";
 var __dirname = "/home/michaeladmin/code/projects/webview-js/test/run.test";
 var initString = `
 document.addEventListener('DOMContentLoaded', function() {
   console.log("Hello Window");
 });
 `;
-webviewChild();
+nodeJSCallabck();
+function nodeJSCallabck() {
+  const lib = __require("../../.bin/libwebview.node");
+  const handle = new JSCallback;
+  console.log({ handle });
+  const result = lib.swig_jsCallback(10, 10, handle);
+  console.log({ result });
+}
 function webviewChild(done) {
-  const worker = makeWorker("./worker.run.js", listenCallback);
+  const workerPath = join(__dirname, "./worker.run.js");
+  const worker = universalWorker(workerPath, listenCallback);
   const webview = new Webview;
   function listenCallback(handle) {
-    webview.dispatch(handle, () => {
-      console.log("dispatched!");
-    });
-    webview.bind(handle, "testBind", () => {
-      console.log("I am a bound function");
-    });
+    console.log({ handle });
+    webview.set_size(handle, 1200, 1200);
+    webview.set_title(handle, "Webview Child Test");
     setTimeout(() => {
-      webview.eval(handle, `testBind()`);
-    }, 2000);
+      webview.terminate(handle);
+      worker.terminate();
+    }, 1000);
   }
-}
-function makeWorker(fileRelativePath, listenCallback) {
-  const runtime = detectRuntime();
-  if (runtime === "node") {
-    const { Worker: Worker2 } = __require("node:worker_threads");
-    const { join } = __require("node:path");
-    const worker2 = new Worker2(join(__dirname, fileRelativePath), {
-      workerData: {}
-    });
-    worker2.on("message", (handle) => listenCallback(handle));
-    return worker2;
-  }
-  const filePath = import.meta.resolve(fileRelativePath);
-  if (runtime === "deno") {
-    const worker2 = new Worker(filePath, { type: "module" });
-    worker2.onmessage = (event) => {
-      const pointerValue = Deno.UnsafePointer.create(event.data);
-      listenCallback(pointerValue);
-    };
-    return worker2;
-  }
-  const worker = new Worker(filePath);
-  worker.onmessage = (event) => listenCallback(event.data);
-  return worker;
 }
 function webviewHelloWindow() {
   const webview = new Webview(true);

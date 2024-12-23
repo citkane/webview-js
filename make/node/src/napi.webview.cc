@@ -1261,10 +1261,19 @@ Napi::Value SWIG_NAPI_AppendOutput(Napi::Env env, Napi::Value result, Napi::Valu
 #define SWIGTYPE_p_char swig_types[0]
 #define SWIGTYPE_p_f_p_q_const__char_p_q_const__char_p_void__void swig_types[1]
 #define SWIGTYPE_p_f_p_void_p_void__void swig_types[2]
-#define SWIGTYPE_p_void swig_types[3]
-#define SWIGTYPE_p_webview_native_handle_kind_t swig_types[4]
-static swig_type_info *swig_types[6];
-static swig_module_info swig_module = {swig_types, 5, 0, 0, 0, 0};
+#define SWIGTYPE_p_int swig_types[3]
+#define SWIGTYPE_p_long_long swig_types[4]
+#define SWIGTYPE_p_short swig_types[5]
+#define SWIGTYPE_p_signed_char swig_types[6]
+#define SWIGTYPE_p_swigJsCallback swig_types[7]
+#define SWIGTYPE_p_unsigned_char swig_types[8]
+#define SWIGTYPE_p_unsigned_int swig_types[9]
+#define SWIGTYPE_p_unsigned_long_long swig_types[10]
+#define SWIGTYPE_p_unsigned_short swig_types[11]
+#define SWIGTYPE_p_void swig_types[12]
+#define SWIGTYPE_p_webview_native_handle_kind_t swig_types[13]
+static swig_type_info *swig_types[15];
+static swig_module_info swig_module = {swig_types, 14, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
@@ -1330,14 +1339,17 @@ template <typename T> T SwigValueInit() {
 #include <assert.h>
 
 
-#include "webview.h"
+#include "swig_helpers.h"
 
-
-SWIGINTERN
-Napi::Value SWIG_From_int(Napi::Env env, int val)
-{
-  return Napi::Number::New(env, val);
+int swig_jsCallback(int a, int b, int (*op)(int, int)) {
+    return op(a, b);
 }
+
+
+struct swigJsCallback {
+  virtual int handle(int a, int b) = 0;
+  virtual ~swigJsCallback() {}
+};
 
 
 SWIGINTERN
@@ -1357,6 +1369,36 @@ int SWIG_AsVal_int (Napi::Value valRef, int* val)
 fail:
   return SWIG_ERROR;
 }
+
+
+SWIGINTERN
+Napi::Value SWIG_From_int(Napi::Env env, int val)
+{
+  return Napi::Number::New(env, val);
+}
+
+
+static swigJsCallback *handler_ptr = NULL;
+static int handler_helper(int a, int b) {
+  // Make the call up to the target language when handler_ptr
+  // is an instance of a target language director class
+  return handler_ptr->handle(a, b);
+}
+// If desired, handler_ptr above could be changed to a thread-local variable in order to make thread-safe
+
+
+int swig_jsCallback(int a, int b, swigJsCallback *handler) {
+  handler_ptr = handler;
+  int result = swig_jsCallback(a, b, &handler_helper);
+  handler = NULL;
+  return result;
+}
+
+
+#include <stdint.h>		// Use the C99 official header
+
+
+#include "webview.h"
 
 
 SWIGINTERN swig_type_info*
@@ -1416,9 +1458,340 @@ fail:
 
 
 
-#define SWIG_NAPI_INIT webview_initialize
+#include <limits.h>
+#if !defined(SWIG_NO_LLONG_MAX)
+# if !defined(LLONG_MAX) && defined(__GNUC__) && defined (__LONG_LONG_MAX__)
+#   define LLONG_MAX __LONG_LONG_MAX__
+#   define LLONG_MIN (-LLONG_MAX - 1LL)
+#   define ULLONG_MAX (LLONG_MAX * 2ULL + 1ULL)
+# endif
+#endif
 
 
+#if defined(LLONG_MAX) && !defined(SWIG_LONG_LONG_AVAILABLE)
+#  define SWIG_LONG_LONG_AVAILABLE
+#endif
+
+
+#ifdef SWIG_LONG_LONG_AVAILABLE
+SWIGINTERN
+Napi::Value SWIG_From_unsigned_SS_long_SS_long(Napi::Env env, unsigned long long val)
+{
+  return Napi::Number::New(env, val);
+}
+#endif
+
+
+SWIGINTERN
+int SWIG_AsVal_double (Napi::Value obj, double *val)
+{
+  if(!obj.IsNumber()) {
+    return SWIG_TypeError;
+  }
+
+  if(val) {
+    Napi::Number num;
+    NAPI_CHECK_RESULT(obj.ToNumber(), num);
+    *val = static_cast<double>(num.DoubleValue());
+  }
+
+  return SWIG_OK;
+  goto fail;
+fail:
+  return SWIG_ERROR;
+}
+
+
+#include <float.h>
+
+
+#include <math.h>
+
+
+SWIGINTERNINLINE int
+SWIG_CanCastAsInteger(double *d, double min, double max) {
+  double x = *d;
+  if ((min <= x && x <= max)) {
+   double fx, cx, rd;
+   errno = 0;
+   fx = floor(x);
+   cx = ceil(x);
+   rd =  ((x - fx) < 0.5) ? fx : cx; /* simple rint */
+   if ((errno == EDOM) || (errno == ERANGE)) {
+     errno = 0;
+   } else {
+     double summ, reps, diff;
+     if (rd < x) {
+       diff = x - rd;
+     } else if (rd > x) {
+       diff = rd - x;
+     } else {
+       return 1;
+     }
+     summ = rd + x;
+     reps = diff/summ;
+     if (reps < 8*DBL_EPSILON) {
+       *d = rd;
+       return 1;
+     }
+   }
+  }
+  return 0;
+}
+
+
+SWIGINTERN
+int SWIG_AsVal_unsigned_SS_long (Napi::Value obj, unsigned long *val)
+{
+  if(!obj.IsNumber()) {
+    return SWIG_TypeError;
+  }
+  if (val) {
+    Napi::Number num;
+    NAPI_CHECK_RESULT(obj.ToNumber(), num);
+    if (num.Int64Value() < 0) {
+      return SWIG_TypeError;
+    }
+    *val = static_cast<unsigned long>(num.Int64Value());
+  }
+  return SWIG_OK;
+  goto fail;
+fail:
+  return SWIG_ERROR;
+}
+
+
+#ifdef SWIG_LONG_LONG_AVAILABLE
+SWIGINTERN
+int SWIG_AsVal_unsigned_SS_long_SS_long (Napi::Value obj, unsigned long long *val)
+{
+  if(!obj.IsNumber()) {
+    return SWIG_TypeError;
+  }
+  if (obj.ToNumber().Int64Value() < 0) {
+    return SWIG_TypeError;
+  }
+  if (val) {
+    Napi::Number num;
+    NAPI_CHECK_RESULT(obj.ToNumber(), num);
+    *val = static_cast<unsigned long long>(num.Int64Value());
+  }
+  return SWIG_OK;
+  goto fail;
+fail:
+  return SWIG_ERROR;
+}
+#endif
+
+
+#define SWIG_NAPI_INIT webview_js_initialize
+
+
+// jsnapi_class_prologue_template
+template <typename SWIG_OBJ_WRAP>
+class _exports_swigJsCallback_templ : public SWIG_NAPI_ObjectWrap_templ<SWIG_OBJ_WRAP> {
+public:
+  _exports_swigJsCallback_templ(const Napi::CallbackInfo &);
+_exports_swigJsCallback_templ(bool, const Napi::CallbackInfo &);
+// jsnapi_class_method_declaration
+Napi::Value _wrap_swigJsCallback_handle(const Napi::CallbackInfo &);
+virtual ~_exports_swigJsCallback_templ();
+// jsnapi_class_epilogue_template
+static void JS_veto_set_static_variable(const Napi::CallbackInfo &, const Napi::Value &);
+void JS_veto_set_variable(const Napi::CallbackInfo &, const Napi::Value &);
+};
+
+template <typename SWIG_OBJ_WRAP>
+void _exports_swigJsCallback_templ<SWIG_OBJ_WRAP>::JS_veto_set_static_variable(const Napi::CallbackInfo &info, const Napi::Value &value) {
+SWIG_NAPI_Raise(info.Env(), "Tried to write read-only variable.");
+}
+
+template <typename SWIG_OBJ_WRAP>
+void _exports_swigJsCallback_templ<SWIG_OBJ_WRAP>::JS_veto_set_variable(const Napi::CallbackInfo &info, const Napi::Value &value) {
+SWIG_NAPI_Raise(info.Env(), "Tried to write read-only variable.");
+}
+// jsnapi_class_instance
+class _exports_swigJsCallback_inst : public _exports_swigJsCallback_templ<_exports_swigJsCallback_inst> {
+public:
+  using _exports_swigJsCallback_templ::_exports_swigJsCallback_templ;
+  virtual ~_exports_swigJsCallback_inst() {
+    
+  };
+  static void GetMembers(
+    Napi::Env,
+    std::map<std::string, _exports_swigJsCallback_templ::PropertyDescriptor> &,
+    std::map<std::string, _exports_swigJsCallback_templ::PropertyDescriptor> &
+    );
+  static Napi::Function GetClass(Napi::Env);
+};
+/* Class: swigJsCallback (_exports_swigJsCallback) */
+// jsnapi_getclass
+Napi::Function _exports_swigJsCallback_inst::GetClass(Napi::Env env) {
+  std::map<std::string, _exports_swigJsCallback_templ::PropertyDescriptor> members, staticMembers;
+  GetMembers(env, members, staticMembers);
+  
+  std::vector<_exports_swigJsCallback_inst::PropertyDescriptor> symbolTable;
+  for (auto it = members.begin(); it != members.end(); it++)
+  symbolTable.push_back(it->second);
+  for (auto it = staticMembers.begin(); it != staticMembers.end(); it++)
+  symbolTable.push_back(it->second);
+  
+  return Napi::ObjectWrap<_exports_swigJsCallback_inst>::DefineClass(env, "swigJsCallback", symbolTable);
+}
+
+void _exports_swigJsCallback_inst::GetMembers(
+  Napi::Env env,
+  std::map<std::string, _exports_swigJsCallback_templ::PropertyDescriptor> &members,
+  std::map<std::string, _exports_swigJsCallback_templ::PropertyDescriptor> &staticMembers
+  ) {
+  std::map<std::string, SWIG_NAPI_ObjectWrap_templ<SWIG_NAPI_ObjectWrap_inst>::PropertyDescriptor> baseMembers, baseStaticMembers;
+  SWIG_NAPI_ObjectWrap_inst::GetMembers(env, baseMembers, baseStaticMembers);
+  members.insert(baseMembers.begin(), baseMembers.end());
+  staticMembers.insert(staticMembers.begin(), staticMembers.end());
+  
+  /* register wrapper functions */
+  // jsnapi_member_function_descriptor
+  members.erase("handle");
+  members.insert({
+    "handle",
+      _exports_swigJsCallback_templ::InstanceMethod("handle",
+        &_exports_swigJsCallback_templ::_wrap_swigJsCallback_handle,
+        static_cast<napi_property_attributes>(napi_writable | napi_configurable))
+    });
+  
+  /* add static class functions and variables */
+  
+}
+
+
+// js_function
+template <typename SWIG_OBJ_WRAP>
+Napi::Value _exports_swigJsCallback_templ<SWIG_OBJ_WRAP>::_wrap_swigJsCallback_handle(const Napi::CallbackInfo &info) {
+  Napi::Env env = info.Env();
+  Napi::Value jsresult;
+  swigJsCallback *arg1 = (swigJsCallback *) 0 ;
+  int arg2 ;
+  int arg3 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int val2 ;
+  int ecode2 = 0 ;
+  int val3 ;
+  int ecode3 = 0 ;
+  int result;
+  
+  if(static_cast<int>(info.Length()) < 2 || static_cast<int>(info.Length()) > 2) {
+    SWIG_Error(SWIG_ERROR, "Illegal number of arguments for _wrap_swigJsCallback_handle.");
+  }
+  
+  res1 = SWIG_ConvertPtr(info.This(), &argp1,SWIGTYPE_p_swigJsCallback, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "swigJsCallback_handle" "', argument " "1"" of type '" "swigJsCallback *""'"); 
+  }
+  arg1 = reinterpret_cast< swigJsCallback * >(argp1);ecode2 = SWIG_AsVal_int(info[0], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "swigJsCallback_handle" "', argument " "2"" of type '" "int""'");
+  } 
+  arg2 = static_cast< int >(val2);ecode3 = SWIG_AsVal_int(info[1], &val3);
+  if (!SWIG_IsOK(ecode3)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "swigJsCallback_handle" "', argument " "3"" of type '" "int""'");
+  } 
+  arg3 = static_cast< int >(val3);result = (int)(arg1)->handle(arg2,arg3);
+  jsresult = SWIG_From_int  SWIG_NAPI_FROM_CALL_ARGS(static_cast< int >(result));
+  
+  
+  
+  
+  return jsresult;
+  
+  goto fail;
+fail:
+  return Napi::Value();
+}
+
+
+// js_dtoroverride
+template <typename SWIG_OBJ_WRAP>
+_exports_swigJsCallback_templ<SWIG_OBJ_WRAP>::~_exports_swigJsCallback_templ() {
+  auto arg1 = reinterpret_cast<swigJsCallback *>(this->self);
+  if (this->owned && arg1) {
+    delete arg1;
+    this->self = nullptr;
+  }
+}
+
+
+// js_veto_ctor
+template <typename SWIG_OBJ_WRAP>
+_exports_swigJsCallback_templ<SWIG_OBJ_WRAP>::_exports_swigJsCallback_templ(const Napi::CallbackInfo &info)
+:SWIG_NAPI_ObjectWrap_templ<SWIG_OBJ_WRAP>(true, info) {
+  Napi::Env env = info.Env();
+  if (info.Length() == 1 && info[0].IsExternal()) {
+    // This constructor has been called internally from C++/SWIG
+    // to wrap an already existing C++ object in JS as its
+    // base abstract class
+    this->self = info[0].As<Napi::External<void>>().Data();
+    this->owned = false;
+    return;
+  }
+  SWIG_Error(SWIG_ERROR, "Class swigJsCallback can not be instantiated");
+  return;
+  goto fail;
+fail:
+  return;
+}
+
+// This is the extendable constructor to be used from child classes
+template <typename SWIG_OBJ_WRAP>
+_exports_swigJsCallback_templ<SWIG_OBJ_WRAP>::_exports_swigJsCallback_templ(bool, const Napi::CallbackInfo &info)
+:SWIG_NAPI_ObjectWrap_templ<SWIG_OBJ_WRAP>(true, info) {
+  
+}
+
+
+// js_global_function
+Napi::Value _wrap_swig_jsCallback(const Napi::CallbackInfo &info) {
+  Napi::Env env = info.Env();
+  Napi::Value jsresult;
+  int arg1 ;
+  int arg2 ;
+  swigJsCallback *arg3 = (swigJsCallback *) 0 ;
+  int val1 ;
+  int ecode1 = 0 ;
+  int val2 ;
+  int ecode2 = 0 ;
+  void *argp3 = 0 ;
+  int res3 = 0 ;
+  int result;
+  
+  if(static_cast<int>(info.Length()) < 3 || static_cast<int>(info.Length()) > 3) {
+    SWIG_Error(SWIG_ERROR, "Illegal number of arguments for _wrap_swig_jsCallback.");
+  }
+  
+  ecode1 = SWIG_AsVal_int(info[0], &val1);
+  if (!SWIG_IsOK(ecode1)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode1), "in method '" "swig_jsCallback" "', argument " "1"" of type '" "int""'");
+  } 
+  arg1 = static_cast< int >(val1);ecode2 = SWIG_AsVal_int(info[1], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "swig_jsCallback" "', argument " "2"" of type '" "int""'");
+  } 
+  arg2 = static_cast< int >(val2);res3 = SWIG_ConvertPtr(info[2], &argp3,SWIGTYPE_p_swigJsCallback, 0 |  0 );
+  if (!SWIG_IsOK(res3)) {
+    SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "swig_jsCallback" "', argument " "3"" of type '" "swigJsCallback *""'"); 
+  }
+  arg3 = reinterpret_cast< swigJsCallback * >(argp3);result = (int)swig_jsCallback(arg1,arg2,arg3);
+  jsresult = SWIG_From_int  SWIG_NAPI_FROM_CALL_ARGS(static_cast< int >(result));
+  
+  
+  
+  
+  return jsresult;
+  
+  goto fail;
+fail:
+  return Napi::Value();
+}
 
 
 // js_global_getter
@@ -2069,11 +2442,76 @@ fail:
 }
 
 
+// js_global_function
+Napi::Value _wrap_swig_value(const Napi::CallbackInfo &info) {
+  Napi::Env env = info.Env();
+  Napi::Value jsresult;
+  void *arg1 = (void *) 0 ;
+  int res1 ;
+  uint64_t result;
+  
+  if(static_cast<int>(info.Length()) < 1 || static_cast<int>(info.Length()) > 1) {
+    SWIG_Error(SWIG_ERROR, "Illegal number of arguments for _wrap_swig_value.");
+  }
+  
+  res1 = SWIG_ConvertPtr(info[0],SWIG_as_voidptrptr(&arg1), 0, 0);
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "swig_value" "', argument " "1"" of type '" "void *""'"); 
+  }result = (uint64_t)swig_value(arg1);
+  jsresult = SWIG_From_unsigned_SS_long_SS_long  SWIG_NAPI_FROM_CALL_ARGS(static_cast< unsigned long long >(result));
+  
+  
+  return jsresult;
+  
+  goto fail;
+fail:
+  return Napi::Value();
+}
+
+
+// js_global_function
+Napi::Value _wrap_swig_create(const Napi::CallbackInfo &info) {
+  Napi::Env env = info.Env();
+  Napi::Value jsresult;
+  uint64_t arg1 ;
+  unsigned long long val1 ;
+  int ecode1 = 0 ;
+  void *result = 0 ;
+  
+  if(static_cast<int>(info.Length()) < 1 || static_cast<int>(info.Length()) > 1) {
+    SWIG_Error(SWIG_ERROR, "Illegal number of arguments for _wrap_swig_create.");
+  }
+  
+  ecode1 = SWIG_AsVal_unsigned_SS_long_SS_long(info[0], &val1);
+  if (!SWIG_IsOK(ecode1)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode1), "in method '" "swig_create" "', argument " "1"" of type '" "uint64_t""'");
+  } 
+  arg1 = static_cast< uint64_t >(val1);result = (void *)swig_create(arg1);
+  jsresult = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_void, 0 |  0 );
+  
+  
+  return jsresult;
+  
+  goto fail;
+fail:
+  return Napi::Value();
+}
+
+
 /* -------- TYPE CONVERSION AND EQUIVALENCE RULES (BEGIN) -------- */
 
 static swig_type_info _swigt__p_char = {"_p_char", "char *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_f_p_q_const__char_p_q_const__char_p_void__void = {"_p_f_p_q_const__char_p_q_const__char_p_void__void", "void (*)(char const *,char const *,void *)", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_f_p_void_p_void__void = {"_p_f_p_void_p_void__void", "void (*)(webview_t,void *)|void (*)(void *,void *)", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_int = {"_p_int", "int32_t *|int_fast16_t *|int_fast32_t *|int_least32_t *|intptr_t *|int *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_long_long = {"_p_long_long", "int64_t *|int_fast64_t *|int_least64_t *|intmax_t *|long long *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_short = {"_p_short", "int16_t *|int_least16_t *|short *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_signed_char = {"_p_signed_char", "int8_t *|int_fast8_t *|int_least8_t *|signed char *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_swigJsCallback = {"_p_swigJsCallback", "p_swigJsCallback|swigJsCallback *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_unsigned_char = {"_p_unsigned_char", "uint8_t *|uint_fast8_t *|uint_least8_t *|unsigned char *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_unsigned_int = {"_p_unsigned_int", "uint32_t *|uint_fast16_t *|uint_fast32_t *|uint_least32_t *|uintptr_t *|unsigned int *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_unsigned_long_long = {"_p_unsigned_long_long", "uint64_t *|uint_fast64_t *|uint_least64_t *|uintmax_t *|unsigned long long *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_unsigned_short = {"_p_unsigned_short", "uint16_t *|uint_least16_t *|unsigned short *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_void = {"_p_void", "webview_t|void *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_webview_native_handle_kind_t = {"_p_webview_native_handle_kind_t", "webview_native_handle_kind_t *", 0, 0, (void*)0, 0};
 
@@ -2081,6 +2519,15 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p_char,
   &_swigt__p_f_p_q_const__char_p_q_const__char_p_void__void,
   &_swigt__p_f_p_void_p_void__void,
+  &_swigt__p_int,
+  &_swigt__p_long_long,
+  &_swigt__p_short,
+  &_swigt__p_signed_char,
+  &_swigt__p_swigJsCallback,
+  &_swigt__p_unsigned_char,
+  &_swigt__p_unsigned_int,
+  &_swigt__p_unsigned_long_long,
+  &_swigt__p_unsigned_short,
   &_swigt__p_void,
   &_swigt__p_webview_native_handle_kind_t,
 };
@@ -2088,6 +2535,15 @@ static swig_type_info *swig_type_initial[] = {
 static swig_cast_info _swigc__p_char[] = {  {&_swigt__p_char, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_f_p_q_const__char_p_q_const__char_p_void__void[] = {  {&_swigt__p_f_p_q_const__char_p_q_const__char_p_void__void, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_f_p_void_p_void__void[] = {  {&_swigt__p_f_p_void_p_void__void, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_int[] = {  {&_swigt__p_int, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_long_long[] = {  {&_swigt__p_long_long, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_short[] = {  {&_swigt__p_short, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_signed_char[] = {  {&_swigt__p_signed_char, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_swigJsCallback[] = {  {&_swigt__p_swigJsCallback, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_unsigned_char[] = {  {&_swigt__p_unsigned_char, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_unsigned_int[] = {  {&_swigt__p_unsigned_int, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_unsigned_long_long[] = {  {&_swigt__p_unsigned_long_long, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_unsigned_short[] = {  {&_swigt__p_unsigned_short, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_void[] = {  {&_swigt__p_void, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_webview_native_handle_kind_t[] = {  {&_swigt__p_webview_native_handle_kind_t, 0, 0, 0},{0, 0, 0, 0}};
 
@@ -2095,6 +2551,15 @@ static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_char,
   _swigc__p_f_p_q_const__char_p_q_const__char_p_void__void,
   _swigc__p_f_p_void_p_void__void,
+  _swigc__p_int,
+  _swigc__p_long_long,
+  _swigc__p_short,
+  _swigc__p_signed_char,
+  _swigc__p_swigJsCallback,
+  _swigc__p_unsigned_char,
+  _swigc__p_unsigned_int,
+  _swigc__p_unsigned_long_long,
+  _swigc__p_unsigned_short,
   _swigc__p_void,
   _swigc__p_webview_native_handle_kind_t,
 };
@@ -2389,16 +2854,57 @@ Napi::Object Init(Napi::Env env, Napi::Object exports) {
   
 
   /* register classes */
-  
+  /* Class: swigJsCallback (_exports_swigJsCallback) */
+// jsnapi_registerclass
+Napi::Function _exports_swigJsCallback_ctor = _exports_swigJsCallback_inst::GetClass(env);
+exports.Set("swigJsCallback", _exports_swigJsCallback_ctor);
+if (SWIGTYPE_p_swigJsCallback->clientdata == nullptr) {
+  SWIGTYPE_p_swigJsCallback->clientdata = new size_t(0);
+}
+Napi::FunctionReference *_exports_swigJsCallback_ctor_ref = new Napi::FunctionReference();
+*_exports_swigJsCallback_ctor_ref = Napi::Persistent(_exports_swigJsCallback_ctor);
+env.GetInstanceData<EnvInstanceData>()->ctor[0] = _exports_swigJsCallback_ctor_ref;
+
 
   /* enable inheritance */
   
+Napi::Value jsObjectValue, jsSetProtoValue;
+Napi::Object jsObject;
+Napi::Function setProto;
+NAPI_CHECK_RESULT(env.Global().Get("Object"), jsObjectValue);
+NAPI_CHECK_RESULT(jsObjectValue.ToObject(), jsObject);
+NAPI_CHECK_RESULT(jsObject.Get("setPrototypeOf"), jsSetProtoValue);
+setProto = jsSetProtoValue.As<Napi::Function>();
+
+
 
   /* setup inheritances */
   
+// Inheritance for _exports_swigJsCallback (swigJsCallback) <- SWIG_NAPI_ObjectWrap
+// jsnapi_setup_inheritance
+do {
+  Napi::Value protoBase, protoSub;
+  NAPI_CHECK_RESULT(_exports_swigJsCallback_ctor.Get("prototype"), protoSub);
+  NAPI_CHECK_RESULT(SWIG_NAPI_ObjectWrap_ctor.Get("prototype"), protoBase);
+  NAPI_CHECK_MAYBE(setProto.Call({
+    _exports_swigJsCallback_ctor, SWIG_NAPI_ObjectWrap_ctor
+  }));
+  NAPI_CHECK_MAYBE(setProto.Call({
+    protoSub, protoBase
+  }));
+} while (0);
+
+
 
   /* create and register namespace objects */
-  // jsnapi_register_global_variable
+  // jsnapi_register_global_function
+do {
+  Napi::PropertyDescriptor pd = Napi::PropertyDescriptor::Function("swig_jsCallback", _wrap_swig_jsCallback);
+  NAPI_CHECK_MAYBE(exports.DefineProperties({
+    pd
+  }));
+} while (0);
+// jsnapi_register_global_variable
 do {
   Napi::PropertyDescriptor pd = Napi::PropertyDescriptor::Accessor<exports_WEBVIEW_HINT_NONE_get, JS_veto_set_variable>("WEBVIEW_HINT_NONE");
   NAPI_CHECK_MAYBE(exports.DefineProperties({
@@ -2538,6 +3044,20 @@ do {
     pd
   }));
 } while (0);
+// jsnapi_register_global_function
+do {
+  Napi::PropertyDescriptor pd = Napi::PropertyDescriptor::Function("swig_value", _wrap_swig_value);
+  NAPI_CHECK_MAYBE(exports.DefineProperties({
+    pd
+  }));
+} while (0);
+// jsnapi_register_global_function
+do {
+  Napi::PropertyDescriptor pd = Napi::PropertyDescriptor::Function("swig_create", _wrap_swig_create);
+  NAPI_CHECK_MAYBE(exports.DefineProperties({
+    pd
+  }));
+} while (0);
 
 
   return exports;
@@ -2546,4 +3066,4 @@ fail:
   return Napi::Object();
 }
 
-NODE_API_MODULE(webview, Init)
+NODE_API_MODULE(webview_js, Init)
